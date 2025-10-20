@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Futebol - Chute na Bola</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #1a6e1a, #0d4d0d);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        .score, .kicks {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+            height: 40px;
+
+        .field-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background-color: #2a8a2a;
+            border: 5px solid #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .soccer-field {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Linhas do campo */
+        .field-lines {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid white;
+        }
+
+        .center-line {
+            position: absolute;
+            width: 100%;
+            height: 0;
+            top: 50%;
+            border-top: 3px solid white;
+        }
+
+        .center-circle {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 3px solid white;
+            border-radius: 50%;
+        }
+
+        .goal-left, .goal-right {
+            position: absolute;
+            width: 20px;
+            height: 80px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: white;
+        }
+
+        .goal-left {
+            left: 0;
+        }
+
+        .goal-right {
+            right: 0;
+        }
+
+        .goal-area-left, .goal-area-right {
+            position: absolute;
+            width: 120px;
+            height: 200px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 3px solid white;
+        }
+
+        .goal-area-left {
+            left: 0;
+            border-right: none;
+        }
+
+        .goal-area-right {
+            right: 0;
+            border-left: none;
+        }
+
+        /* Bola */
+        .ball {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="white"/><path d="M50,5 A45,45 0 0,1 95,50 A45,45 0 0,1 50,95 A45,45 0 0,1 5,50 A45,45 0 0,1 50,5" fill="none" stroke="black" stroke-width="2"/><path d="M50,5 L50,95" stroke="black" stroke-width="2"/><path d="M5,50 L95,50" stroke="black" stroke-width="2"/><circle cx="50" cy="50" r="10" fill="black"/></svg>');
+            background-size: contain;
+            cursor: pointer;
+            transition: transform 0.1s;
+            z-index: 10;
+        }
+
+        .ball:hover {
+            transform: scale(1.1);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+
+        .instructions h2 {
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin-bottom: 5px;
+        }
+
+        .goal-animation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            font-weight: bold;
+            color: gold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+            animation: goalText 2s ease-out;
+        }
+
+        @keyframes goalText {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .field-container {
+                height: 400px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Jogo de Futebol</h1>
+        <div class="game-info">
+            <div class="score">Gols: <span id="score">0</span></div>
+            <div class="kicks">Chutes: <span id="kicks">0</span></div>
+        </div>
+        
+        <div class="field-container">
+            <div class="soccer-field">
+                <!-- Linhas do campo -->
+                <div class="field-lines"></div>
+                <div class="center-line"></div>
+                <div class="center-circle"></div>
+                
+                <!-- Área do gol esquerdo -->
+                <div class="goal-area-left"></div>
+                <div class="goal-left"></div>
+                
+                <!-- Área do gol direito -->
+                <div class="goal-area-right"></div>
+                <div class="goal-right"></div>
+                
+                <!-- Bola -->
+                <div class="ball" id="ball"></div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>Como Jogar</h2>
+            <p>Clique na bola para chutá-la!</p>
+            <p>Tente fazer gols chutando a bola para o gol adversário.</p>
+            <p>Cada gol vale 1 ponto. Veja quantos gols você consegue fazer!</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ball = document.getElementById('ball');
+            const scoreElement = document.getElementById('score');
+            const kicksElement = document.getElementById('kicks');
+            const field = document.querySelector('.field-container');
+            
+            let score = 0;
+            let kicks = 0;
+            let isMoving = false;
+            
+            // Posiciona a bola no centro do campo inicialmente
+            resetBall();
+            
+            // Adiciona evento de clique na bola
+            ball.addEventListener('click', function(e) {
+                if (isMoving) return; // Evita múltiplos cliques enquanto a bola está se movendo
+                
+                kicks++;
+                kicksElement.textContent = kicks;
+                
+                // Obtém a posição do clique relativa à bola
+                const rect = ball.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                // Calcula a direção do chute baseado na posição do clique
+                // Quanto mais perto da borda, mais forte o chute
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                // Vetor de direção (normalizado)
+                const dirX = (clickX - centerX) / centerX;
+                const dirY = (clickY - centerY) / centerY;
+                
+                // Força do chute (distância do centro)
+                const distanceFromCenter = Math.sqrt(
+                    Math.pow(clickX - centerX, 2) + 
+                    Math.pow(clickY - centerY, 2)
+                );
+                
+                const force = Math.min(distanceFromCenter / centerX, 1.5);
+                
+                // Move a bola
+                moveBall(dirX, dirY, force);
+            });
+            
+            function moveBall(dirX, dirY, force) {
+                isMoving = true;
+                
+                const fieldRect = field.getBoundingClientRect();
+                const ballRect = ball.getBoundingClientRect();
+                
+                // Calcula o deslocamento baseado na direção e força
+                const moveX = dirX * force * 300;
+                const moveY = dirY * force * 300;
+                
+                // Nova posição
+                let newLeft = ball.offsetLeft + moveX;
+                let newTop = ball.offsetTop + moveY;
+                
+                // Limita a bola dentro do campo
+                newLeft = Math.max(10, Math.min(fieldRect.width - ballRect.width - 10, newLeft));
+                newTop = Math.max(10, Math.min(fieldRect.height - ballRect.height - 10, newTop));
+                
+                // Aplica a animação
+                ball.style.transition = 'all 0.5s ease-out';
+                ball.style.left = newLeft + 'px';
+                ball.style.top = newTop + 'px';
+                
+                // Verifica se é gol após a animação
+                setTimeout(() => {
+                    checkGoal(newLeft, newTop);
+                    isMoving = false;
+                }, 500);
+            }
+            
+            function checkGoal(ballLeft, ballTop) {
+                const fieldRect = field.getBoundingClientRect();
+                const ballRect = ball.getBoundingClientRect();
+                
+                // Verifica se a bola entrou no gol esquerdo
+                if (ballLeft <= 20 && 
+                    ballTop + ballRect.height/2 >= fieldRect.height/2 - 40 && 
+                    ballTop + ballRect.height/2 <= fieldRect.height/2 + 40) {
+                    score++;
+                    scoreElement.textContent = score;
+                    showGoalAnimation();
+                    resetBall();
+                }
+                
+                // Verifica se a bola entrou no gol direito
+                if (ballLeft + ballRect.width >= fieldRect.width - 20 && 
+                    ballTop + ballRect.height/2 >= fieldRect.height/2 - 40 && 
+                    ballTop + ballRect.height/2 <= fieldRect.height/2 + 40) {
+                    score++;
+                    scoreElement.textContent = score;
+                    showGoalAnimation();
+                    resetBall();
+                }
+            }
+            
+            function showGoalAnimation() {
+                const goalText = document.createElement('div');
+                goalText.className = 'goal-animation';
+                goalText.textContent = 'GOOOOL!';
+                document.body.appendChild(goalText);
+                
+                // Remove a animação após terminar
+                setTimeout(() => {
+                    document.body.removeChild(goalText);
+                }, 2000);
+            }
+            
+            function resetBall() {
+                const fieldRect = field.getBoundingClientRect();
+                const ballRect = ball.getBoundingClientRect();
+                
+                // Posiciona a bola no centro
+                const centerX = (fieldRect.width - ballRect.width) / 2;
+                const centerY = (fieldRect.height - ballRect.height) / 2;
+                
+                ball.style.transition = 'all 0.5s ease-out';
+                ball.style.left = centerX + 'px';
+                ball.style.top = centerY + 'px';
+            }
+            
+            // Reposiciona a bola quando a janela é redimensionada
+            window.addEventListener('resize', resetBall);
+        });
+    </script>
+</body>
+</html>
